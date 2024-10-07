@@ -1,11 +1,14 @@
 "use client"
 import React,{ useEffect, useState } from 'react'
+import { useAuth } from './utils/authContext';
+import Login from './login/page';
 
 const page = () => {
   const [products,setProducts] = useState([]);
+  const {token,setToken} = useAuth();
+
    useEffect(()=>{
     const fetchProducts = async()=>{
-      const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJvbUBnbWFpbC5jb20iLCJleHAiOjE3MjgyMzUyNzk2MDksImlhdCI6MTcyODIzMTY3OX0.iUTehE8vsoQjMQNPpN9aCJdIyGkItL3xwfODBdDUCBU"
       const response =await fetch('https://intern-task-api.bravo68web.workers.dev/api/products',{
         method: 'GET',
         headers: {
@@ -14,16 +17,93 @@ const page = () => {
         }
       });
       const data =await  response.json();
+      setProducts(data);
       console.log("Product:- ",data);
     }
     fetchProducts();
-   },[])
+   },[token])
 
-   return(
-    <div>
-      <h1>Hello</h1>
-    </div>
-   )
+   const [searchTerm, setSearchTerm] = useState('');
+   const [currentPage, setCurrentPage] = useState(1);
+   const productsPerPage = 8;
+ 
+   // Search functionality - move filtering logic to be before pagination
+   const filteredProducts = products.filter(product =>
+     product.title.toLowerCase().includes(searchTerm.toLowerCase())
+   );
+ 
+   // Pagination functionality
+   const indexOfLastProduct = currentPage * productsPerPage;
+   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+   
+   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+ 
+   const handleNextPage = () => {
+     if (currentPage < totalPages) {
+       setCurrentPage(currentPage + 1);
+     }
+   };
+ 
+   const handlePrevPage = () => {
+     if (currentPage > 1) {
+       setCurrentPage(currentPage - 1);
+     }
+   };
+ 
+   // Reset the current page when search term changes
+   useEffect(() => {
+     setCurrentPage(1);
+   }, [searchTerm]);
+ 
+   return token != null? 
+     (<div className="container mx-auto p-4">
+       {/* Search Bar */}
+       <input
+         type="text"
+         placeholder="Search products..."
+         className="mb-4 p-2 border border-gray-300 rounded"
+         value={searchTerm}
+         onChange={(e) => setSearchTerm(e.target.value)}
+       />
+ 
+       {/* Product List */}
+       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+         {currentProducts.map((product) => (
+           <div className="relative border border-gray-200 rounded-lg p-4 shadow-md" key={product.id}>
+             <img
+               src={product.thumbnail}
+               alt={product.title}
+               className="w-full h-48 object-cover rounded-md"
+             />
+             <h3 className="mt-2 text-lg font-semibold">{product.title}</h3>
+             <div className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded transform rotate-12">
+               ${product.price.toFixed(2)}
+             </div>
+           </div>
+         ))}
+       </div>
+ 
+       {/* Pagination Controls */}
+       <div className="flex justify-between items-center mt-4">
+         <button 
+           className={`px-4 py-2 bg-blue-500 text-white rounded ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+           onClick={handlePrevPage} 
+           disabled={currentPage === 1}
+         >
+           Previous
+         </button>
+         <span className="font-semibold">Page {currentPage} of {totalPages}</span>
+         <button 
+           className={`px-4 py-2 bg-blue-500 text-white rounded ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+           onClick={handleNextPage} 
+           disabled={currentPage === totalPages}
+         >
+           Next
+         </button>
+       </div>
+     </div>):( <Login/>)
+   
 }
 
 export default page
