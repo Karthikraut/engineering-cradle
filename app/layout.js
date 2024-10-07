@@ -7,6 +7,9 @@ const layout = ( {children}) => {
     <AuthProvider>
     <html lang="en">
       <body>
+      <title>Engineer's Cradle</title>
+        {/* Add favicon using logo.png */}
+        <link rel="icon" type="image/png" href="/logo.png" />  
         {children}
       </body>
     </html>
